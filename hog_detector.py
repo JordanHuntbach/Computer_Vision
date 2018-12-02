@@ -102,7 +102,7 @@ def detect(img, svm):
                         pad_w, pad_h = int(0.15 * window_size[0]), int(0.05 * window_size[1])
 
                         # Store rect as (x1, y1), (x2,y2) pair.
-                        rect = np.float32([135 + x + pad_w, y + pad_h, 135 + x + window_size[0] - pad_w, y + window_size[1] - pad_h])
+                        rect = np.float32([x + pad_w, y + pad_h, x + window_size[0] - pad_w, y + window_size[1] - pad_h])
 
                         # If we want to see progress show each detection, at each scale.
                         if show_scan_window_process:
@@ -111,6 +111,8 @@ def detect(img, svm):
                             cv2.waitKey(40)
 
                         rect *= (1.0 / current_scale)
+                        rect[0] += 135
+                        rect[2] += 135
 
                         detections.append(rect)
 

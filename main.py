@@ -45,12 +45,12 @@ if __name__ == '__main__':
 
         distances = []
         for detection in detections:
-            local_disparities = disparities[detection[1]:detection[2], detection[0]:detection[2]].flatten()
+            local_disparities = disparities[detection[1]:detection[3], detection[0]:detection[2]]
+            local_disparities = local_disparities.flatten()
             centre_x = int(detection[0] + (detection[2] - detection[0]) // 2)
             centre_y = int(detection[1] + (detection[3] - detection[1]) // 2)
 
-            # disparity = statistics.median(local_disparities)
-            disparity = 10
+            disparity = statistics.median(local_disparities)
             if disparity > 0:
                 # Depth = focal length * baseline distance / disparity.
                 depth = focal_length * baseline_distance / disparity
