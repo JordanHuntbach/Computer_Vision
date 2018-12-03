@@ -17,6 +17,7 @@ import math
 import params
 from utils import *
 from sliding_window import *
+from selective_search import *
 
 ################################################################################
 
@@ -45,7 +46,7 @@ def load_svm():
 ################################################################################
 
 
-def detect(img, svm):
+def detect_sliding(img, svm):
     img = img[0:390, 135:1024]
 
     # For a range of different image scales in an image pyramid.
@@ -84,7 +85,7 @@ def detect(img, svm):
                     cv2.imshow('current window', window)
                     cv2.waitKey(10)  # wait 10ms
 
-                # For each window region get the BoW feature point descriptors.
+                # For each window region get the HoG feature point descriptors.
                 img_data = ImageData(window)
                 img_data.compute_hog_descriptor()
 
@@ -125,23 +126,55 @@ def detect(img, svm):
 ################################################################################
 
 
-def draw(img, detections):
-    output_img = img.copy()
+def detect_selective(img, svm):
+    img = img[0:390, 135:1024]
 
-    # Draw all the detections on the original image.
-    for rect in detections:
-        cv2.rectangle(output_img, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 2)
+    detections = []
 
-    return output_img
+    # For each selected region:
+    for (x1, y1, x2, y2) in create_segments(img):
+        window = img[y1: y2, x1: x2]
 
-################################################################################
+        # For each window region get the HoG feature point descriptors.
+        img_data = ImageData(window)
+        img_data.compute_hog_descriptor()
 
+        # If we want to see progress show each scan window.
+        if show_scan_window_process:
+            cv2.imshow('current window', window)
+            cv2.waitKey(10)  # wait 10ms
 
-def display(output_img):
-    cv2.imshow('Detected objects', output_img)
-    key = cv2.waitKey(200)  # Wait 200ms
-    if key == ord('x'):
-        return
+        # Generate and classify each window by constructing a HoG histogram and passing
+        # it through the SVM classifier.
+        if img_data.hog_descriptor is not None:
+
+            retval, [result] = svm.predict(np.float32([img_data.hog_descriptor]))
+
+            # If we get a detection, then record it.
+            if result[0] == params.DATA_CLASS_NAMES["pedestrian"]:
+
+                # If we want to see progress show each scan window.
+                if show_scan_window_process:
+                    cv2.imshow('Detection', window)
+                    cv2.waitKey(40)  # wait 10ms
+
+                # The HOG detector returns slightly larger rectangles than the real objects,
+                # so we slightly shrink the rectangles to get a nicer output.
+                pad_w, pad_h = int(0.15 * (x2 - x1)), int(0.05 * (y2 - y1))
+
+                # Store rect as (x1, y1), (x2,y2) pair.
+                rect = np.float32([x1 + pad_w, y1 + pad_h, x2 - pad_w, y2 - pad_h])
+
+                rect[0] += 135
+                rect[2] += 135
+
+                detections.append(rect)
+
+    # For the overall set of detections (over all scales) perform non maximal suppression.
+    # (i.e. remove overlapping boxes etc.)
+    detections = non_max_suppression_fast(np.int32(detections), 0.4)
+
+    return detections
 
 ################################################################################
 
@@ -154,7 +187,7 @@ if __name__ == '__main__':
         if '.png' in filename:
             image = cv2.imread(os.path.join(directory_to_cycle, filename), cv2.IMREAD_COLOR)
 
-            display(draw(image, detect(image, svm)))
+            display(draw(image, detect_selective(image, svm)))
 
     # Close all windows
     cv2.destroyAllWindows()

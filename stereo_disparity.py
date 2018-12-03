@@ -88,7 +88,14 @@ def calculate_disparity(filename_left):
         dispNoiseFilter = 5  # Increase for more aggressive filtering.
         cv2.filterSpeckles(disparity, 0, 4000, max_disparity - dispNoiseFilter)
 
-        return disparity
+        # Scale the disparity to 8-bit for viewing:
+        # Divide by 16 and convert to 8-bit image (then range of values should be 0 -> max_disparity)
+        # but in fact is (-1 -> max_disparity - 1) so we fix this also using a initial threshold between
+        # 0 and max_disparity as disparity=-1 means no disparity available.
+        _, disparity = cv2.threshold(disparity, 0, max_disparity * 16, cv2.THRESH_TOZERO)
+        disparity_scaled = (disparity / 16.).astype(np.uint8)
+
+        return disparity_scaled
 
     else:
         print("-- files skipped (perhaps one is missing or not PNG)")
@@ -101,22 +108,15 @@ def display_disparity(disparity):
     global crop_disparity
     global pause_playback
 
-    # Scale the disparity to 8-bit for viewing:
-    # Divide by 16 and convert to 8-bit image (then range of values should be 0 -> max_disparity)
-    # but in fact is (-1 -> max_disparity - 1) so we fix this also using a initial threshold between
-    # 0 and max_disparity as disparity=-1 means no disparity available.
-    _, disparity = cv2.threshold(disparity, 0, max_disparity * 16, cv2.THRESH_TOZERO)
-    disparity_scaled = (disparity / 16.).astype(np.uint8)
-
     # Crop disparity to chop out left part where there are with no disparity, as this area is not seen
     # by both cameras and also chop out the bottom area (where we see the front of car bonnet).
     if crop_disparity:
-        width = np.size(disparity_scaled, 1)
-        disparity_scaled = disparity_scaled[0:390, 135:width]
+        width = np.size(disparity, 1)
+        disparity = disparity[0:390, 135:width]
 
     # Display image (scaling it to the full 0->255 range based on the number of disparities in use for
     # the stereo part).
-    cv2.imshow("Disparity", (disparity_scaled * (256. / max_disparity)).astype(np.uint8))
+    cv2.imshow("Disparity", (disparity * (256. / max_disparity)).astype(np.uint8))
 
     # Keyboard input for exit (as standard) and cropping"
     # exit - x

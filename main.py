@@ -35,7 +35,7 @@ if __name__ == '__main__':
         image = cv2.imread(full_path_filename_left, cv2.IMREAD_COLOR)
 
         # Perform pedestrian detection.
-        detections = hog_detector.detect(image, svm)
+        detections = hog_detector.detect_selective(image, svm)
         output_img = hog_detector.draw(image, detections)
 
         # Calculate disparities.
@@ -52,11 +52,10 @@ if __name__ == '__main__':
 
             disparity = statistics.median(local_disparities)
             if disparity > 0:
-                # Depth = focal length * baseline distance / disparity.
                 depth = focal_length * baseline_distance / disparity
 
-                cv2.putText(output_img, "%.2fm" % depth, (centre_x, centre_y),
-                            cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1)
+                cv2.putText(output_img, "%.2fm" % depth, (centre_x, centre_y), cv2.FONT_HERSHEY_PLAIN,
+                            1, (0, 0, 255), 1)
                 distances.append(depth)
             else:
                 distances.append(-1)

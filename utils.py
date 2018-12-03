@@ -26,6 +26,27 @@ show_images_as_they_are_sampled = False
 ################################################################################
 
 
+def draw(img, detections):
+    output_img = img.copy()
+
+    # Draw all the detections on the original image.
+    for rect in detections:
+        cv2.rectangle(output_img, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 2)
+
+    return output_img
+
+################################################################################
+
+
+def display(output_img):
+    cv2.imshow('Detected objects', output_img)
+    key = cv2.waitKey(200)  # Wait 200ms
+    if key == ord('x'):
+        return
+
+################################################################################
+
+
 # timing information - for training
 # - helper function for timing code execution
 def get_elapsed_time(start):
