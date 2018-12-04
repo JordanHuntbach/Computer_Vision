@@ -29,22 +29,19 @@ def create_segments(image):
     ss.setBaseImage(image)
 
     # Set recall vs. speed
-    # ss.switchToSelectiveSearchQuality()
-    ss.switchToSelectiveSearchFast()
+    ss.switchToSelectiveSearchQuality()
+    # ss.switchToSelectiveSearchFast()
 
     # Run selective search segmentation on input image
     rects = ss.process()
-    print('Total Number of Region Proposals: {}'.format(len(rects)))
-
-    # Number of region proposals to return
-    num_show_rects = 1000
+    # print('Total Number of Region Proposals: {}'.format(len(rects)))
 
     return_rects = []
 
     for i, rect in enumerate(rects):
-        # Draw rectangle for region proposal till num_show_rects
-        if i < num_show_rects:
-            x, y, w, h = rect / ratio
+        x, y, w, h = rect / ratio
+        aspect = h / w
+        if 0.5 <= aspect:
             x = int(x)
             y = int(y)
             w = int(w)
