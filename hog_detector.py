@@ -18,6 +18,7 @@ import params
 from utils import *
 from sliding_window import *
 from selective_search import *
+from stereo_disparity import *
 
 ################################################################################
 
@@ -46,8 +47,9 @@ def load_svm():
 ################################################################################
 
 
-def detect_sliding(img, svm):
-    img = img[0:390, 135:1024]
+def detect_sliding(img, svm, disparity_map):
+    img = img[110:390, 135:1024]
+    disparities = disparity_map[110:390, 135:1024]
 
     # For a range of different image scales in an image pyramid.
     current_scale = -1
@@ -100,7 +102,7 @@ def detect_sliding(img, svm):
 
                         # The HOG detector returns slightly larger rectangles than the real objects,
                         # so we slightly shrink the rectangles to get a nicer output.
-                        pad_w, pad_h = int(0.15 * window_size[0]), int(0.05 * window_size[1])
+                        pad_w, pad_h = int(0.10 * window_size[0]), int(0.05 * window_size[1])
 
                         # Store rect as (x1, y1), (x2,y2) pair.
                         rect = np.float32([x + pad_w, y + pad_h, x + window_size[0] - pad_w, y + window_size[1] - pad_h])
@@ -112,10 +114,18 @@ def detect_sliding(img, svm):
                             cv2.waitKey(40)
 
                         rect *= (1.0 / current_scale)
-                        rect[0] += 135
-                        rect[2] += 135
 
-                        detections.append(rect)
+                        x1 = int(rect[0])
+                        y1 = int(rect[1])
+                        x2 = int(rect[2])
+                        y2 = int(rect[3])
+
+                        disparity = get_object_disparity(disparities[y1:y2, x1:x2])
+
+                        if disparity > 0:
+                            distance = get_object_depth(disparity)
+                            if good_human_size(distance, y2 - y1, x2 - x1):
+                                detections.append((x1 + 135, y1 + 110, x2 + 135, y2 + 110))
 
     # For the overall set of detections (over all scales) perform non maximal suppression.
     # (i.e. remove overlapping boxes etc.)
@@ -126,8 +136,17 @@ def detect_sliding(img, svm):
 ################################################################################
 
 
-def detect_selective(img, svm):
-    img = img[0:390, 135:1024]
+def good_human_size(distance, height, width):
+    # Real Object height (m) = Distance to Object (m) x Object height on sensor (px) / focal length (px)
+    human_height = distance * height / params.focal_length
+
+    return 1.40 < human_height < 2 and width < height
+
+################################################################################
+
+
+def detect_selective(image, svm):
+    img = image[20:390, 135:1024]
 
     detections = []
 
@@ -166,7 +185,9 @@ def detect_selective(img, svm):
                 rect = np.float32([x1 + pad_w, y1 + pad_h, x2 - pad_w, y2 - pad_h])
 
                 rect[0] += 135
+                rect[1] += 20
                 rect[2] += 135
+                rect[3] += 20
 
                 detections.append(rect)
 

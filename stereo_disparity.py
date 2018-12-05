@@ -13,12 +13,15 @@
 # License : LGPL - http://www.gnu.org/licenses/lgpl.html
 
 #####################################################################
+import statistics
 
 import cv2
 import os
 import numpy as np
 
 # Where is the data ? - set this to where you have it
+import params
+
 master_path_to_dataset = "Datasets/TTBB-durham-02-10-17-sub10"
 directory_to_cycle_left = "left-images"
 directory_to_cycle_right = "right-images"
@@ -129,6 +132,29 @@ def display_disparity(disparity):
         crop_disparity = not crop_disparity
     elif key == ord(' '):  # pause (on next frame)
         pause_playback = not pause_playback
+
+#####################################################################
+
+
+def get_object_disparity(disparity_map):
+    width = len(disparity_map[0])
+    height = len(disparity_map)
+
+    centre_x = int(width // 2)
+    centre_y = int(height // 2)
+
+    if disparity_map[centre_y][centre_x] > 0:
+        return disparity_map[centre_y][centre_x]
+    else:
+        local_disparities = disparity_map.flatten()
+        return statistics.median(local_disparities)
+
+
+#####################################################################
+
+
+def get_object_depth(disparity):
+    return params.focal_length * params.baseline_distance / disparity
 
 #####################################################################
 

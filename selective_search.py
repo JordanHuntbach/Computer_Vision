@@ -17,20 +17,22 @@ cv2.setNumThreads(4)
 ss = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 
 
-def create_segments(image):
+def create_segments(img):
     # Resize image
-    ratio = 0.5
+    ratio = 1
     if ratio < 1:
-        new_height = int(image.shape[0] * ratio)
-        new_width = int(image.shape[1] * ratio)
-        image = cv2.resize(image, (new_width, new_height))
+        new_height = int(img.shape[0] * ratio)
+        new_width = int(img.shape[1] * ratio)
+        image = cv2.resize(img, (new_width, new_height))
+    else:
+        image = img
 
     # Set input image on which we will run segmentation
     ss.setBaseImage(image)
 
     # Set recall vs. speed
-    # ss.switchToSelectiveSearchQuality()
-    ss.switchToSelectiveSearchFast()
+    ss.switchToSelectiveSearchQuality()
+    # ss.switchToSelectiveSearchFast()
 
     # Run selective search segmentation on input image
     rects = ss.process()

@@ -47,11 +47,17 @@ DATA_CLASS_NAMES = {
 }
 
 ################################################################################
+# Camera details.
+
+focal_length = 399.9745178222656  # pixels
+baseline_distance = 0.2090607502  # meters
+
+################################################################################
 # Settings for HOG approaches
 
-HOG_SVM_PATH = "svm_hog.xml"
+HOG_SVM_PATH = "svm_rbf.xml"
 
-HOG_SVM_kernel = cv2.ml.SVM_LINEAR  # see opencv manual for other options
+HOG_SVM_kernel = cv2.ml.SVM_RBF  # see opencv manual for other options
 HOG_SVM_max_training_iterations = 500  # stop training after max iterations
 
 ################################################################################
