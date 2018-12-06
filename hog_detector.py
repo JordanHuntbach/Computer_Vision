@@ -53,7 +53,8 @@ def detect_sliding(img, svm, disparity_map):
 
     # For a range of different image scales in an image pyramid.
     current_scale = -1
-    detections = []
+    people_detections = []
+    vehicle_detections = []
     rescaling_factor = 1.25
 
     # For each re-scale of the image.
@@ -125,13 +126,38 @@ def detect_sliding(img, svm, disparity_map):
                         if disparity > 0:
                             distance = get_object_depth(disparity)
                             if good_human_size(distance, y2 - y1, x2 - x1):
-                                detections.append((x1 + 135, y1 + 110, x2 + 135, y2 + 110))
+                                people_detections.append((x1 + 135, y1 + 110, x2 + 135, y2 + 110))
+
+                    elif result[0] == params.DATA_CLASS_NAMES["vehicle"]:
+                        # The HOG detector returns slightly larger rectangles than the real objects,
+                        # so we slightly shrink the rectangles to get a nicer output.
+                        pad_w, pad_h = int(0.10 * window_size[0]), int(0.05 * window_size[1])
+
+                        # Store rect as (x1, y1), (x2,y2) pair.
+                        rect = np.float32(
+                            [x + pad_w, y + pad_h, x + window_size[0] - pad_w, y + window_size[1] - pad_h])
+
+                        # If we want to see progress show each detection, at each scale.
+                        if show_scan_window_process:
+                            cv2.rectangle(rect_img, (rect[0], rect[1]), (rect[2], rect[3]), (0, 0, 255), 2)
+                            cv2.imshow('current scale', rect_img)
+                            cv2.waitKey(40)
+
+                        rect *= (1.0 / current_scale)
+
+                        x1 = int(rect[0])
+                        y1 = int(rect[1])
+                        x2 = int(rect[2])
+                        y2 = int(rect[3])
+
+                        vehicle_detections.append((x1 + 135, y1 + 110, x2 + 135, y2 + 110))
 
     # For the overall set of detections (over all scales) perform non maximal suppression.
     # (i.e. remove overlapping boxes etc.)
-    detections = non_max_suppression_fast(np.int32(detections), 0.4)
+    people_detections = non_max_suppression_fast(np.int32(people_detections), 0.4)
+    vehicle_detections = non_max_suppression_fast(np.int32(vehicle_detections), 0.5)
 
-    return detections
+    return people_detections, vehicle_detections
 
 ################################################################################
 

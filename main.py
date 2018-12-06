@@ -69,12 +69,12 @@ if __name__ == '__main__':
         stereo_disparity.display_disparity(disparities)
 
         # Perform pedestrian detection.
-        detections = hog_detector.detect_sliding(image, svm, disparities)
+        pedestrians, vehicles = hog_detector.detect_sliding(image, svm, disparities)
 
         distances = []
-        output_img = draw(image, detections)
+        output_img = draw(image, pedestrians)
 
-        for detection in detections:
+        for detection in pedestrians:
             x1 = detection[0]
             y1 = detection[1]
             x2 = detection[2]
@@ -83,7 +83,19 @@ if __name__ == '__main__':
             disparity = stereo_disparity.get_object_disparity(disparities[y1:y2, x1:x2])
             if disparity > 0:
                 depth = stereo_disparity.get_object_depth(disparity)
-                cv2.putText(output_img, "%.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1)
+                cv2.putText(output_img, "P: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1)
+                distances.append(depth)
+
+        for detection in vehicles:
+            x1 = detection[0]
+            y1 = detection[1]
+            x2 = detection[2]
+            y2 = detection[3]
+
+            disparity = stereo_disparity.get_object_disparity(disparities[y1:y2, x1:x2])
+            if disparity > 0:
+                depth = stereo_disparity.get_object_depth(disparity)
+                cv2.putText(output_img, "V: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                 distances.append(depth)
 
         display(output_img)
