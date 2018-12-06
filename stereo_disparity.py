@@ -137,18 +137,9 @@ def display_disparity(disparity):
 
 
 def get_object_disparity(disparity_map):
-    width = len(disparity_map[0])
-    height = len(disparity_map)
-
-    centre_x = int(width // 2)
-    centre_y = int(height // 2)
-
-    if disparity_map[centre_y][centre_x] > 0:
-        return disparity_map[centre_y][centre_x]
-    else:
-        local_disparities = disparity_map.flatten()
-        return statistics.median(local_disparities)
-
+    local_disparities = sorted(list(disparity_map.flatten()), reverse=True)
+    length = len(local_disparities)
+    return local_disparities[int(length * 0.2)]
 
 #####################################################################
 

@@ -293,7 +293,7 @@ def load_image_path(path, class_name, imgs_data, samples=0, centre_weighting=Fal
 
 
 # load image data from specified paths
-def load_images(paths, class_names, sample_set_sizes, use_centre_weighting_flags, centre_sampling_offset=10, patch_size=(64,128)):
+def load_images(paths, class_names, sample_set_sizes, use_centre_weighting_flags, centre_sampling_offset=10, patch_size=(64, 128)):
     imgs_data = []  # type: list[ImageData]
 
     # for each specified path and corresponding class_name and required number

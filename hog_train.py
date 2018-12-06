@@ -24,19 +24,23 @@ def main():
     start = cv2.getTickCount()
 
     # N.B. Specify data path names in same order as class names (neg, pos).
-    paths = [params.DATA_training_path_neg, params.DATA_training_path_pos]
+    paths = [params.DATA_training_path_neg,
+             params.DATA_training_path_pos,
+             params.DATA_training_path_veh]
 
     # Build a list of class names automatically from our dictionary of class (name,number) pairs.
     class_names = [get_class_name(class_number) for class_number in range(len(params.DATA_CLASS_NAMES))]
 
     # Specify number of sub-window samples to take from each positive and negative example image in the data set.
     # N.B. Specify in same order as class names (neg, pos), again.
-    sampling_sizes = [params.DATA_training_sample_count_neg, params.DATA_training_sample_count_pos]
+    sampling_sizes = [params.DATA_training_sample_count_neg,
+                      params.DATA_training_sample_count_pos,
+                      params.DATA_training_sample_count_veh]
 
     # Do we want to take samples only centric to the example image or randomly?
     # No - for background -ve images (first class).
     # Yes - for object samples +ve images (second class).
-    sample_from_centre = [False, True]
+    sample_from_centre = [False, True, True]
 
     # Perform image loading
     imgs_data = load_images(paths, class_names, sampling_sizes, sample_from_centre,
@@ -66,9 +70,12 @@ def main():
     # svm.setKernel(cv2.ml.SVM_CHI2)
     # filename = "svm_chi2.xml"
 
-    svm.setDegree(2)
-    svm.setKernel(cv2.ml.SVM_POLY)
-    filename = "svm_poly.xml"
+    # svm.setDegree(2)
+    # svm.setKernel(cv2.ml.SVM_POLY)
+    # filename = "svm_poly.xml"
+
+    svm.setKernel(cv2.ml.SVM_RBF)
+    filename = "svm_v_rbf.xml"
 
     # svm.setKernel(cv2.ml.SVM_SIGMOID)
     # filename = "svm_sigmoid.xml"

@@ -20,10 +20,12 @@ master_path_to_dataset = "Datasets/"  # ** need to edit this **
 # Data location - training examples
 DATA_training_path_neg = os.path.join(master_path_to_dataset, "INRIAPerson/Train/neg/")
 DATA_training_path_pos = os.path.join(master_path_to_dataset, "INRIAPerson/train_64x128_H96/pos/")
+DATA_training_path_veh = os.path.join(master_path_to_dataset, "INRIAPerson/Train/veh/")
 
 # Data location - testing examples
 DATA_testing_path_neg = os.path.join(master_path_to_dataset, "INRIAPerson/Test/neg/")
 DATA_testing_path_pos = os.path.join(master_path_to_dataset, "INRIAPerson/test_64x128_H96/pos/")
+DATA_testing_path_veh = os.path.join(master_path_to_dataset, "INRIAPerson/Test/veh/")
 
 # Size of the sliding window patch / image patch to be used for classification
 # (for larger windows sizes, for example from selective search - resize the
@@ -40,10 +42,14 @@ DATA_training_sample_count_neg = 10
 # Number of sample patches to extract from each positive training example
 DATA_training_sample_count_pos = 5
 
+# Number of sample patches to extract from each vehicle training example
+DATA_training_sample_count_veh = 5
+
 # Class names - N.B. ordering of 0, 1 for neg/pos = order of paths
 DATA_CLASS_NAMES = {
     "other": 0,
-    "pedestrian": 1
+    "pedestrian": 1,
+    "vehicle": 2
 }
 
 ################################################################################
@@ -55,7 +61,7 @@ baseline_distance = 0.2090607502  # meters
 ################################################################################
 # Settings for HOG approaches
 
-HOG_SVM_PATH = "svm_rbf.xml"
+HOG_SVM_PATH = "svm_v_rbf.xml"
 
 HOG_SVM_kernel = cv2.ml.SVM_RBF  # see opencv manual for other options
 HOG_SVM_max_training_iterations = 500  # stop training after max iterations
