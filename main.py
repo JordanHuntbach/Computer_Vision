@@ -19,7 +19,7 @@ full_path_directory_right = os.path.join(master_path_to_dataset, directory_to_cy
 
 left_file_list = sorted(os.listdir(full_path_directory_left))
 
-skip_forward_file_pattern = "1506942483.480862_L.png"
+skip_forward_file_pattern = ""
 
 ############################################################################
 # OpenCV default HoG pedestrian detection.
@@ -71,9 +71,17 @@ if __name__ == '__main__':
         # Load the image.
         image = cv2.imread(full_path_filename_left, cv2.IMREAD_COLOR)
 
+        # Use CLAHE to improve contrast - didn't seem very effective.
+
+        # lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        # lab_planes = cv2.split(lab)
+        # clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
+        # lab_planes[0] = clahe.apply(lab_planes[0])
+        # lab = cv2.merge(lab_planes)
+        # image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
         # Calculate disparity map and display it in a window.
         disparities = stereo_disparity.calculate_disparity(filename_left)
-        stereo_disparity.display_disparity(disparities)
 
         # Perform object detection.
         pedestrians, vehicles = hog_detector.detect_sliding(image, svm, disparities)
@@ -105,7 +113,8 @@ if __name__ == '__main__':
                 cv2.putText(output_img, "V: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                 distances.append(depth)
 
-        # Display output image.
+        # Display output images.
+        stereo_disparity.display_disparity(disparities)
         display(output_img)
 
         # Find the distance to the nearest object, to send to the standard output.

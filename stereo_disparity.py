@@ -39,7 +39,7 @@ left_file_list = sorted(os.listdir(full_path_directory_left))
 max_disparity = 128
 stereoProcessor = cv2.StereoSGBM_create(0, max_disparity, 21)
 
-crop_disparity = True  # Display full or cropped disparity image.
+crop_disparity = False  # Display full or cropped disparity image.
 pause_playback = False  # Pause until key press after each image.
 
 #####################################################################
