@@ -13,10 +13,9 @@ import numpy as np
 import cv2
 
 ################################################################################
+# Re-size an image with respect to its aspect ratio if needed.
+# (Used in the multi-scale image pyramid approach)
 
-
-# re-size an image with respect to its aspect ratio if needed.
-# used in the multi-scale image pyramid approach
 
 def resize_img(img, width=-1, height=-1):
     if height == -1 and width == -1:
@@ -33,10 +32,9 @@ def resize_img(img, width=-1, height=-1):
         return cv2.resize(img, (new_width, height))
 
 ################################################################################
-
-
-# a very basic approach to produce an image at multi-scales (i.e. variant
+# A very basic approach to produce an image at multi-scales (i.e. variant
 # re-sized resolutions)
+
 
 def pyramid(img, scale=1.5, min_size=(30, 30)):
     # yield the original image
@@ -57,9 +55,8 @@ def pyramid(img, scale=1.5, min_size=(30, 30)):
         yield img
 
 ################################################################################
+# Generate a set of sliding window locations across the image.
 
-
-# generate a set of sliding window locations across the image
 
 def sliding_window(image, window_size, step_size=8):
     # slide a window across the image
@@ -71,9 +68,8 @@ def sliding_window(image, window_size, step_size=8):
                 yield (x, y, window)
 
 ################################################################################
+# Perform basic non-maximal suppression of overlapping object detections.
 
-
-# perform basic non-maximal suppression of overlapping object detections
 
 def non_max_suppression_fast(boxes, overlapThresh):
     # if there are no boxes, return an empty list

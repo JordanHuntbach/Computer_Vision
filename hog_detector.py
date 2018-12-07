@@ -45,16 +45,19 @@ def load_svm():
         exit()
 
 ################################################################################
+# Perform HoG object detection using a sliding window.
 
 
 def detect_sliding(img, svm, disparity_map):
+    # Crop the image to remove the left-hand portion of the screen, the bonnet of the car, and part of the top.
     img = img[110:390, 135:1024]
     disparities = disparity_map[110:390, 135:1024]
 
-    # For a range of different image scales in an image pyramid.
-    current_scale = -1
     people_detections = []
     vehicle_detections = []
+
+    # For a range of different image scales in an image pyramid.
+    current_scale = -1
     rescaling_factor = 1.25
 
     # For each re-scale of the image.
@@ -123,6 +126,7 @@ def detect_sliding(img, svm, disparity_map):
 
                         disparity = get_object_disparity(disparities[y1:y2, x1:x2])
 
+                        # Filter out detections that are not the correct size for a human.
                         if disparity > 0:
                             distance = get_object_depth(disparity)
                             if good_human_size(distance, y2 - y1, x2 - x1):
@@ -160,6 +164,8 @@ def detect_sliding(img, svm, disparity_map):
     return people_detections, vehicle_detections
 
 ################################################################################
+# This function is used as a heuristic to remove false positives. It returns true if
+# a detection is the right height to be a pedestrian.
 
 
 def good_human_size(distance, height, width):
@@ -169,10 +175,13 @@ def good_human_size(distance, height, width):
     return 1.40 < human_height < 2 and width < height
 
 ################################################################################
+# Performs HoG detection using a selective search window. This function is not
+# actually used in the final program.
 
 
-def detect_selective(image, svm):
+def detect_selective(image, svm, disparity_map):
     img = image[20:390, 135:1024]
+    disparities = disparity_map[20:390, 135:1024]
 
     detections = []
 
@@ -205,38 +214,27 @@ def detect_selective(image, svm):
 
                 # The HOG detector returns slightly larger rectangles than the real objects,
                 # so we slightly shrink the rectangles to get a nicer output.
-                pad_w, pad_h = int(0.15 * (x2 - x1)), int(0.05 * (y2 - y1))
+                pad_w, pad_h = int(0.10 * (x2 - x1)), int(0.05 * (y2 - y1))
 
                 # Store rect as (x1, y1), (x2,y2) pair.
                 rect = np.float32([x1 + pad_w, y1 + pad_h, x2 - pad_w, y2 - pad_h])
 
-                rect[0] += 135
-                rect[1] += 20
-                rect[2] += 135
-                rect[3] += 20
+                disparity = get_object_disparity(disparities[y1:y2, x1:x2])
 
-                detections.append(rect)
+                # Remove some false positives if they're not the right size.
+                if disparity > 0:
+                    distance = get_object_depth(disparity)
+                    if good_human_size(distance, y2 - y1, x2 - x1):
+                        rect[0] += 135
+                        rect[1] += 20
+                        rect[2] += 135
+                        rect[3] += 20
+                        detections.append(rect)
 
     # For the overall set of detections (over all scales) perform non maximal suppression.
     # (i.e. remove overlapping boxes etc.)
     detections = non_max_suppression_fast(np.int32(detections), 0.4)
 
     return detections
-
-################################################################################
-
-
-if __name__ == '__main__':
-    svm = load_svm()
-
-    # Process all images in directory (sorted by filename).
-    for filename in sorted(os.listdir(directory_to_cycle)):
-        if '.png' in filename:
-            image = cv2.imread(os.path.join(directory_to_cycle, filename), cv2.IMREAD_COLOR)
-
-            display(draw(image, detect_selective(image, svm)))
-
-    # Close all windows
-    cv2.destroyAllWindows()
 
 ################################################################################

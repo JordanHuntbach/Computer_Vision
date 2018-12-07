@@ -18,8 +18,6 @@ import statistics
 import cv2
 import os
 import numpy as np
-
-# Where is the data ? - set this to where you have it
 import params
 
 master_path_to_dataset = "Datasets/TTBB-durham-02-10-17-sub10"
@@ -38,23 +36,14 @@ left_file_list = sorted(os.listdir(full_path_directory_left))
 # Setup the disparity stereo processor to find a maximum of 128 disparity values.
 # (Adjust parameters if needed - this will effect speed to processing)
 
-# Uses a modified H. Hirschmuller algorithm [Hirschmuller, 2008] that differs (see opencv manual)
-# parameters can be adjusted, current ones from [Hamilton / Breckon et al. 2013]
-
-# FROM manual: stereoProcessor = cv2.StereoSGBM(numDisparities=128, SADWindowSize=21);
-
-# From help(cv2): StereoBM_create(...)
-#        StereoBM_create([, numDisparities[, blockSize]]) -> retval
-#
-#    StereoSGBM_create(...)
-#        StereoSGBM_create(minDisparity, numDisparities, blockSize[, P1[, P2[,
-# disp12MaxDiff[, preFilterCap[, uniquenessRatio[, speckleWindowSize[, speckleRange[, mode]]]]]]]]) -> retval
-
 max_disparity = 128
 stereoProcessor = cv2.StereoSGBM_create(0, max_disparity, 21)
 
-crop_disparity = False  # Display full or cropped disparity image.
+crop_disparity = True  # Display full or cropped disparity image.
 pause_playback = False  # Pause until key press after each image.
+
+#####################################################################
+# Calculate the disparity map from a given image.
 
 
 def calculate_disparity(filename_left):
@@ -70,7 +59,6 @@ def calculate_disparity(filename_left):
         # Read left and right images and display in windows.
         # N.B. Despite one being greyscale, both are in fact stored as 3-channel RGB images so load both as such.
         imgL = cv2.imread(full_path_filename_left, cv2.IMREAD_COLOR)
-
         imgR = cv2.imread(full_path_filename_right, cv2.IMREAD_COLOR)
 
         # Remember to convert to greyscale (as the disparity matching works on greyscale).
@@ -105,6 +93,7 @@ def calculate_disparity(filename_left):
         print()
 
 #####################################################################
+# Display the disparity map within a window.
 
 
 def display_disparity(disparity):
@@ -134,14 +123,29 @@ def display_disparity(disparity):
         pause_playback = not pause_playback
 
 #####################################################################
+# Gets the disparity of an object from the disparities within its detection box.
 
 
 def get_object_disparity(disparity_map):
+    # Old method:
+    # width = len(disparity_map[0])
+    # height = len(disparity_map)
+    #
+    # centre_x = int(width // 2)
+    # centre_y = int(height // 2)
+    #
+    # if disparity_map[centre_y][centre_x] > 0:
+    #     return disparity_map[centre_y][centre_x]
+    # else:
+    #     local_disparities = disparity_map.flatten()
+    #     return statistics.median(local_disparities)
+
     local_disparities = sorted(list(disparity_map.flatten()), reverse=True)
     length = len(local_disparities)
     return local_disparities[int(length * 0.2)]
 
 #####################################################################
+# Gets the distance to an object, from its disparity.
 
 
 def get_object_depth(disparity):

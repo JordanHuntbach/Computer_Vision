@@ -16,6 +16,9 @@ cv2.setNumThreads(4)
 # Create Selective Search Segmentation Object using default parameters
 ss = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 
+################################################################################
+# A simple selective search function - not actually used in the final program.
+
 
 def create_segments(img):
     # Resize image
@@ -40,10 +43,11 @@ def create_segments(img):
 
     return_rects = []
 
+    max_returned = 1000
+
     for i, rect in enumerate(rects):
         x, y, w, h = rect / ratio
-        aspect = h / w
-        if 0.5 <= aspect:
+        if i < max_returned:
             x = int(x)
             y = int(y)
             w = int(w)
@@ -54,11 +58,13 @@ def create_segments(img):
 
     return return_rects
 
+################################################################################
+
 
 if __name__ == '__main__':
     directory = "Datasets/TTBB-durham-02-10-17-sub10/left-images/"
     left_file_list = sorted(os.listdir(directory))
     for filename_left in left_file_list:
         image = cv2.imread(os.path.join(directory, filename_left), cv2.IMREAD_COLOR)
-        detections = create_segments(image)
-        display(draw(image, detections))
+        selections = create_segments(image)
+        display(draw(image, selections))

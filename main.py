@@ -1,6 +1,3 @@
-import statistics
-
-import imutils as imutils
 from imutils.object_detection import non_max_suppression
 
 import hog_detector
@@ -22,7 +19,10 @@ full_path_directory_right = os.path.join(master_path_to_dataset, directory_to_cy
 
 left_file_list = sorted(os.listdir(full_path_directory_left))
 
+skip_forward_file_pattern = "1506942483.480862_L.png"
+
 ############################################################################
+# OpenCV default HoG pedestrian detection.
 
 
 def built_in(image):
@@ -47,33 +47,40 @@ def built_in(image):
 
 
 ############################################################################
+# Main function performs pedestrian detection using HoG detector, and then
+# calculates the distance to each detected object.
+
 
 if __name__ == '__main__':
+    # Load the SVM.
     svm = hog_detector.load_svm()
+
     for filename_left in left_file_list:
+
+        # Skip forward to start a file we specify by timestamp (if this is set).
+        if (len(skip_forward_file_pattern) > 0) and not (skip_forward_file_pattern in filename_left):
+            continue
+        elif (len(skip_forward_file_pattern) > 0) and (skip_forward_file_pattern in filename_left):
+            skip_forward_file_pattern = ""
 
         # From the left image filename get the corresponding right image.
         filename_right = filename_left.replace("_L", "_R")
         full_path_filename_left = os.path.join(full_path_directory_left, filename_left)
         full_path_filename_right = os.path.join(full_path_directory_right, filename_right)
 
-        # Print to standard output as requested.
-        print(filename_left)
-        print(filename_right)
-
         # Load the image.
         image = cv2.imread(full_path_filename_left, cv2.IMREAD_COLOR)
 
-        # Calculate disparities.
+        # Calculate disparity map and display it in a window.
         disparities = stereo_disparity.calculate_disparity(filename_left)
         stereo_disparity.display_disparity(disparities)
 
-        # Perform pedestrian detection.
+        # Perform object detection.
         pedestrians, vehicles = hog_detector.detect_sliding(image, svm, disparities)
-
-        distances = []
         output_img = draw(image, pedestrians)
 
+        # Get the distance to each object, and draw it on the output image.
+        distances = []
         for detection in pedestrians:
             x1 = detection[0]
             y1 = detection[1]
@@ -98,13 +105,18 @@ if __name__ == '__main__':
                 cv2.putText(output_img, "V: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
                 distances.append(depth)
 
+        # Display output image.
         display(output_img)
 
+        # Find the distance to the nearest object, to send to the standard output.
         smallest_distance = None
         for value in distances:
             if smallest_distance is None or value < smallest_distance:
                 smallest_distance = value
         if smallest_distance is None:
             smallest_distance = 0
-        print("Nearest detected scene object (%.2fm)" % smallest_distance)
+
+        # Print to standard output as requested.
+        print(filename_left)
+        print(filename_right + " : nearest detected scene object (%.2fm)" % smallest_distance)
         print()
