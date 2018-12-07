@@ -56,76 +56,76 @@ if __name__ == '__main__':
     svm = hog_detector.load_svm()
 
     for filename_left in left_file_list:
+        if '.png' in filename_left:
+            # Skip forward to start a file we specify by timestamp (if this is set).
+            if (len(skip_forward_file_pattern) > 0) and not (skip_forward_file_pattern in filename_left):
+                continue
+            elif (len(skip_forward_file_pattern) > 0) and (skip_forward_file_pattern in filename_left):
+                skip_forward_file_pattern = ""
 
-        # Skip forward to start a file we specify by timestamp (if this is set).
-        if (len(skip_forward_file_pattern) > 0) and not (skip_forward_file_pattern in filename_left):
-            continue
-        elif (len(skip_forward_file_pattern) > 0) and (skip_forward_file_pattern in filename_left):
-            skip_forward_file_pattern = ""
+            # From the left image filename get the corresponding right image.
+            filename_right = filename_left.replace("_L", "_R")
+            full_path_filename_left = os.path.join(full_path_directory_left, filename_left)
+            full_path_filename_right = os.path.join(full_path_directory_right, filename_right)
 
-        # From the left image filename get the corresponding right image.
-        filename_right = filename_left.replace("_L", "_R")
-        full_path_filename_left = os.path.join(full_path_directory_left, filename_left)
-        full_path_filename_right = os.path.join(full_path_directory_right, filename_right)
+            # Load the image.
+            image = cv2.imread(full_path_filename_left, cv2.IMREAD_COLOR)
 
-        # Load the image.
-        image = cv2.imread(full_path_filename_left, cv2.IMREAD_COLOR)
+            # Use CLAHE to improve contrast - didn't seem very effective.
 
-        # Use CLAHE to improve contrast - didn't seem very effective.
+            # lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+            # lab_planes = cv2.split(lab)
+            # clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
+            # lab_planes[0] = clahe.apply(lab_planes[0])
+            # lab = cv2.merge(lab_planes)
+            # image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
 
-        # lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        # lab_planes = cv2.split(lab)
-        # clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
-        # lab_planes[0] = clahe.apply(lab_planes[0])
-        # lab = cv2.merge(lab_planes)
-        # image = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+            # Calculate disparity map and display it in a window.
+            disparities = stereo_disparity.calculate_disparity(filename_left)
 
-        # Calculate disparity map and display it in a window.
-        disparities = stereo_disparity.calculate_disparity(filename_left)
+            # Perform object detection.
+            pedestrians, vehicles = hog_detector.detect_sliding(image, svm, disparities)
+            output_img = draw(image, pedestrians)
 
-        # Perform object detection.
-        pedestrians, vehicles = hog_detector.detect_sliding(image, svm, disparities)
-        output_img = draw(image, pedestrians)
+            # Get the distance to each object, and draw it on the output image.
+            distances = []
+            for detection in pedestrians:
+                x1 = detection[0]
+                y1 = detection[1]
+                x2 = detection[2]
+                y2 = detection[3]
 
-        # Get the distance to each object, and draw it on the output image.
-        distances = []
-        for detection in pedestrians:
-            x1 = detection[0]
-            y1 = detection[1]
-            x2 = detection[2]
-            y2 = detection[3]
+                disparity = stereo_disparity.get_object_disparity(disparities[y1:y2, x1:x2])
+                if disparity > 0:
+                    depth = stereo_disparity.get_object_depth(disparity)
+                    cv2.putText(output_img, "P: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1)
+                    distances.append(depth)
 
-            disparity = stereo_disparity.get_object_disparity(disparities[y1:y2, x1:x2])
-            if disparity > 0:
-                depth = stereo_disparity.get_object_depth(disparity)
-                cv2.putText(output_img, "P: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1)
-                distances.append(depth)
+            for detection in vehicles:
+                x1 = detection[0]
+                y1 = detection[1]
+                x2 = detection[2]
+                y2 = detection[3]
 
-        for detection in vehicles:
-            x1 = detection[0]
-            y1 = detection[1]
-            x2 = detection[2]
-            y2 = detection[3]
+                disparity = stereo_disparity.get_object_disparity(disparities[y1:y2, x1:x2])
+                if disparity > 0:
+                    depth = stereo_disparity.get_object_depth(disparity)
+                    cv2.putText(output_img, "V: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
+                    distances.append(depth)
 
-            disparity = stereo_disparity.get_object_disparity(disparities[y1:y2, x1:x2])
-            if disparity > 0:
-                depth = stereo_disparity.get_object_depth(disparity)
-                cv2.putText(output_img, "V: %.2fm" % depth, (detection[0], detection[3] + 15), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
-                distances.append(depth)
+            # Display output images.
+            stereo_disparity.display_disparity(disparities)
+            display(output_img)
 
-        # Display output images.
-        stereo_disparity.display_disparity(disparities)
-        display(output_img)
+            # Find the distance to the nearest object, to send to the standard output.
+            smallest_distance = None
+            for value in distances:
+                if smallest_distance is None or value < smallest_distance:
+                    smallest_distance = value
+            if smallest_distance is None:
+                smallest_distance = 0
 
-        # Find the distance to the nearest object, to send to the standard output.
-        smallest_distance = None
-        for value in distances:
-            if smallest_distance is None or value < smallest_distance:
-                smallest_distance = value
-        if smallest_distance is None:
-            smallest_distance = 0
-
-        # Print to standard output as requested.
-        print(filename_left)
-        print(filename_right + " : nearest detected scene object (%.2fm)" % smallest_distance)
-        print()
+            # Print to standard output as requested.
+            print(filename_left)
+            print(filename_right + " : nearest detected scene object (%.2fm)" % smallest_distance)
+            print()
